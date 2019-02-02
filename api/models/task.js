@@ -7,6 +7,10 @@ const   randomstring            = require("randomstring");
 const   path                    = require('path');
 const   dateFormat              = require('dateformat');
 const   date                    = require('date-and-time');
+const   FCM                     = require('fcm-call');
+const   nodemailer              = require('nodemailer');
+const   mail                    = require('nodemailer').mail;
+
 const   connection              = mysql.createConnection({
         host            : config.host,
         user            : config.user,
@@ -14,20 +18,31 @@ const   connection              = mysql.createConnection({
         database        : config.database
 });
 
+var smtpTransport = nodemailer.createTransport("SMTP", {
+                  service : 'gmail',
+                        auth :  {
+                                user : 'jin.cheng.19900915@gmail.com',
+                                pass : 'jincheng0915'
+                        }
+                });
+
+
 var Task = {
         /*
                 users Table
         */
 
         registerUser : function(res, Task, callback) {
+console.log(Task);
                 var data = {
                         userName                : Task.userName,
                         password                : Task.password,
                         email                   : Task.email,
                         firstname               : Task.firstname,
                         lastname                : Task.lastname,
-                        phonenumber     : Task.phonenumber,
-                        PIN                     : Task.PIN
+                        phonenumber             : Task.phonenumber,
+                        PIN                     : Task.PIN,
+                        FCM_Token               : Task.Token
                 };
 
                 return connection.query("SELECT * FROM users where userName = ?", [Task.userName], function(err, results) {
@@ -94,7 +109,7 @@ var Task = {
                                                         Success : true,
                                                         Message : "login successfull",
                                                         User    : results
-});
+                                                });
                                         } else {
                                                 res.json({
                                                         Code    : 401,
@@ -133,15 +148,15 @@ var Task = {
                                                 Message : "User does not exits"
                                         });
                                 }
-                        } 
+                        }
                 })
         },
 
         getUserbyRequester :  function(requester, provider, res, callback) {
                 let rEquester, pRovider;
 
-                connection.query("SELECT * from users where userName = ?", [requester], function(error, results, fields) {
-                if (error) {
+                connection.query("SELECT firstname, lastname, FCM_Token from users where userName = ?", [requester], function(error, results, fields) {
+                        if (error) {
                                 res.json({
                                         Success : false,
                                         Message : "error ocurred"
@@ -150,7 +165,7 @@ var Task = {
                         } else {
                                 if ( results.length > 0 ){
                                         rEquester = results;
-                                        connection.query("SELECT * from users where userName = ?", [provider], function(error, results, field) {
+                                        connection.query("SELECT * from users where userName = ?", [provider], function(error, results, fields) {
                                                 if (error) {
                                                         res.json({
                                                                 Success :  false,
@@ -200,8 +215,71 @@ var Task = {
                 })
         },
 
+        getUserByEmail :   function(email, res, callback) {
+
+
+                connection.query("SELECT * from users where email = ?", [email], function(error, results, fields) {
+                        if (error) {
+                                res.json({
+                                        Success : false,
+                                        Message : "error ocurred"
+                                });
+                        } else {
+                                if ( results.length > 0 ){
+                                        console.log(results[0].email);
+                                        var link = "http://18.235.201.14/ResetPasswordHtml/index.php?token=" + results[0].FCM_Token;
+                                        var data = {
+                                                from : 'Confirm2Me  <noreply@confirm2me.com>',
+                                                to : results[0].email,
+                                                subject : 'Password help has arrived!',
+                                                html : '<a href="' + link + '">Click here to rest password</a>'
+                                        };
+                                        smtpTransport.sendMail(data, function(err, response) {
+
+                                                if (!err) {
+                                                        console.log('response->', response);
+                                                        res.json({
+                                                                Success : true
+                                                        });
+                                                } else  {
+                                                        console.error('was an error: ', err);
+                                                        res.json({
+                                                                Success : false,
+                                                                Message : err
+                                                        });
+                                                }
+                                        });
+/*
+                                        var link = "http://18.235.201.14/ResetPasswordHtml/index.php?token=" + results[0].FCM_Token;
+                                        mail({
+                                                          from : 'Confirm2Me  <noreply@confirm2me.com>',                                                to : results[0].email,
+                                                subject : 'Password help has arrived!',
+                                                text : 'ajksdajfkasdfjkajklasdjfkasdfjkjasdkfjsadkfj;saidfj;kljkasdfjklasdjf;ajsdfkljasdfjalksdfja;lsdkfjalskdjfasjdfajdlfja;sdfkjasdkfj;asdkjflasdkjflasdjfksjadflkjsdflkjasdlkfjsaldkfjlaskdfjlasdjflkasdjflkasdfjasdflkjasdlkfjlsadf',
+                                                html : "<b> Hello there </b>"
+                                        }, function(err) {
+                                                if (err)
+                                                        res.json({
+                                                                Success : false,
+                                                                Message : err
+                                                        });
+                                                else
+                                                        res.json({
+                                                                Success : true
+                                                        });
+                                        });
+*/
+                                } else {
+                                        res.json({
+                                                Success : false,
+                                                Message : "User does not exits"
+                                        });
+                                }
+                        }
+                })
+        },
         updateUser : function(Task, callback) {
                 const salt = bcrypt.genSaltSync(10);
+                console.log(Task);
                 var newUser = {
                         userName                : Task.userName,
                         password                : Task.password,
@@ -214,11 +292,13 @@ var Task = {
                 return connection.query("UPDATE users SET ? where id = ?", [newUser, Task.idx], callback);
         },
 
+        resetPassword : function(Task, callback) {
+                return connection.query("UPDATE users SET password = ? where FCM_Token = ?", [Task.password, Task.token], callback);
+        },
 
         /*
                 requests Table
         */
-
         newRequest : function(Task, callback) {
                 let now = new Date();
                 const request = {
@@ -265,7 +345,7 @@ var Task = {
         },
 
         getRequestsByRequester : function(requester, res, callback) {
-                connection.query("SELECT * from requests where Requester = ? ORDER BY updated_at", [requester], function(error, results, field) {
+                connection.query("SELECT * from requests where Requester = ? ORDER BY updated_at", [requester], function(error, results, fields) {
                         if (error) {
                                 res.json({
                                         Code    : 403,
@@ -291,7 +371,7 @@ var Task = {
         },
 
         getRequestsByProvider : function(provider, res, callback) {
-                connection.query("SELECT * from requests where provider_pNumber = ? ORDER BY updated_at", [provider], function(error, results) {
+                connection.query("SELECT * from requests where provider_pNumber = ? ORDER BY updated_at", [provider], function(error, results, fields) {
                         if (error) {
                                 res.json({
                                         Code    : 403,
@@ -317,23 +397,24 @@ var Task = {
         },
 
         CountBySenderMail : function(requester, res, callback) {
-                connection.query("SELECT COUNT(*) from requests where Requester = ? and sender_mail_unread = ?", [requester, true], function(error, results, fields) {
+                connection.query("SELECT * from requests where Requester = ? and sender_mail_unread = ?", [requester, 0], function(error, results, fields) {
                         if (error) {
                                 res.json({
                                         Success : false,
                                         Message : error
                                 });
                         } else {
+                                console.log(results.length);
                                 res.json({
                                         Success : true,
-                                        Count   : results.length - 1
+                                        Count   : results.length
                                 });
                         }
                 });
         },
 
         CountByReceiverMail : function(provider, res, callback) {
-                connection.query("SELECT COUNT(*) from requests where provider_pNumber = ? and receiver_mail_unread = ?", [provider, true], function(error, results, fields) {
+                connection.query("SELECT * from requests where provider_pNumber = ? and receiver_mail_unread = ?", [provider, 0], function(error, results, fields) {
                         if (error) {
                                 res.json({
                                         Success : false,
@@ -342,7 +423,7 @@ var Task = {
                         } else {
                                 res.json({
                                         Success : true,
-                                        Count   : results.length - 1
+                                        Count   : results.length
                                 });
                         }
                 });
@@ -360,6 +441,9 @@ var Task = {
                 return connection.query("UPDATE requests SET sender_status = ?, receiver_mail_unread = ? where id = ?", [Task.status, true, Task.idx], callback);
         },
 
+        updateReceiverStatus : function(Task, callback) {
+                return connection.query("UPDATE requests SET receiver_status = ?, sender_mail_unread = ? where id = ?", [Task.status, true, Task.idx], callback);
+        },
         addVideo : function(Task, callback) {
                 return connection.query("UPDATE requests SET receiver_status = ?, sender_mail_unread = ?, video = ? where id = ?", [Task.status, true, Task.video, Task.idx], callback);
 
@@ -503,6 +587,10 @@ var Task = {
                 });
         },
 
+        pushNotification(res, Task, callback) {
+                return connection.query("UPDATE users SET FCM_Token  = ? where id = ?", [Task.Token, Task.idx], callback);
+        },
 };
 
 module.exports = Task;
+

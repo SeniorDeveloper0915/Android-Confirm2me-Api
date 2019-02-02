@@ -1,23 +1,21 @@
 {
-	"name": "confirmtomeapi",
-	"version": "1.0.0",
-	"main": "app.js",
-	"dependencies": {
-		"basic-auth": "^2.0.0",
-		"bcryptjs": "^2.4.3",
-		"connect": "~2.14.4",
-		"crypto": "~0.0.3",
-		"csprng": "~0.1.1",
-		"date-and-time": "^0.6.3",
-		"dateformat": "^3.0.3",
-		"express": "^4.16.3",
-		"formidable": "^1.2.1",
-		"gravatar": "~1.0.6",
-		"jsonwebtoken": "^8.3.0",
-		"mongoose": "~3.8.8",
-		"mysql": "^2.16.0",
-		"nodemailer": "~0.6.3",
-		"query": "^0.2.0",
-		"randomstring": "^1.1.5"
-	}
+  "name": "confirmtomeapi",
+  "version": "1.0.0",
+  "main": "app.js",
+  "dependencies": {
+    "basic-auth": "^2.0.0",
+    "bcryptjs": "^2.4.3",
+    "connect": "~2.14.4",
+    "crypto": "~0.0.3",
+    "csprng": "~0.1.1",
+    "date-and-time": "^0.6.3",
+    "express": "^4.16.3",
+    "gravatar": "~1.0.6",
+    "jsonwebtoken": "^8.3.0",
+    "mongoose": "~3.8.8",
+    "mysql": "^2.16.0",
+    "node-gcm": "^1.0.2",
+    "nodemailer": "^0.6.5",
+    "query": "^0.2.0"
+  }
 }

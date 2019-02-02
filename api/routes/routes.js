@@ -12,11 +12,27 @@ router.get('/', function (req, res) {
         res.send('Welcome to Confirm2ME');
 });
 
+router.put('/api/v1/changetoken', function(req, res, next) {
+        console.log(req.body);
+        task.pushNotification(res, req.body, function(err) {
+                if (err) {
+                        res.json({
+                                Success : false,
+                                Message : err
+                        });
+                } else {
+                        res.json({
+                                Success : true,
+                                Message : "Token Update Success"
+                        });
+                }
+        });
+});
 /*
         users Table
 */
 router.post('/api/v1/registration', function(req, res, next) {
-        task.registerUser(res, req.query, function(err) {
+        task.registerUser(res, req.body, function(err) {
         });
 
 });
@@ -43,8 +59,29 @@ router.get('/api/v1/userbyprovider', function(req, res, next) {
         });
 });
 
+router.get('/api/v1/userbyemail', function(req, res, next) {
+        task.getUserByEmail(req.query.email, res, function(er) {
+        });
+});
+
+router.post('/api/v1/resetpassword', function(req, res, next) {
+        task.resetPassword(req.body, function(err) {
+                if (err) {
+                        var response = {"response" : {"Success" : false, "Message" : err}};
+                        res.setHeader('content-type', 'application/json');
+                        res.setHeader("Access-Control-Allow-Origin", "*");
+                        res.send(response);
+                } else {
+                        var response = {"response" : {"Success" : true, "Message" : 'No Error'}};
+                        res.setHeader('content-type', 'application/json');
+                        res.setHeader("Access-Control-Allow-Origin", "*");
+                        res.send(response);
+                }
+        });
+});
+
 router.put('/api/v1/updateuser', function(req, res, next) {
-        task.updateUser(req.query, function(err) {
+        task.updateUser(req.body, function(err) {
                 if (err) {
                         res.json({
                                 Success : false,
@@ -57,14 +94,14 @@ router.put('/api/v1/updateuser', function(req, res, next) {
                         });
                 }
         });
-}) 
+})
 
 
 /*
         requets Table
 */
 router.post('/api/v1/newrequest', function(req, res, next) {
-        task.newRequest(req.query, function(err) {
+        task.newRequest(req.body, function(err) {
                 if (err) {
                         res.json({
                                 Success : false,
@@ -80,7 +117,6 @@ router.post('/api/v1/newrequest', function(req, res, next) {
 });
 
 router.delete('/api/v1/deleterequest', function(req, res, next) {
-        console.log("AAA : ", req.query.idx);
         task.deleteRequest(req.query.idx, function(err) {
                 if (err) {
                         res.json({
@@ -92,7 +128,7 @@ router.delete('/api/v1/deleterequest', function(req, res, next) {
                                 Success : true,
                                 Message : "Delete Request Success"
                         });
-               }
+                }
         });
 });
 
@@ -122,7 +158,7 @@ router.get('/api/v1/CountbyReceiverMail', function(req, res, next) {
 });
 
 router.put('/api/v1/updatesendermail', function(req, res, next) {
-        task.updateSenderMailUnread(req.query.idx, function(err) {
+        task.updateSenderMailUnread(req.body.idx, function(err) {
                 if (err) {
                         res.json({
                                 Success : false,
@@ -138,7 +174,7 @@ router.put('/api/v1/updatesendermail', function(req, res, next) {
 });
 
 router.put('/api/v1/updatereceivermail', function(req, res, next) {
-        task.updateReceiverMailUnread(req.query.idx, function(err) {
+        task.updateReceiverMailUnread(req.body.idx, function(err) {
                 if (err) {
                         res.json({
                                 Success : false,
@@ -154,7 +190,7 @@ router.put('/api/v1/updatereceivermail', function(req, res, next) {
 });
 
 router.put('/api/v1/addvideo', function(req, res, next) {
-        task.addVideo(req.query, function(err){
+        task.addVideo(req.body, function(err){
                 if (err) {
                         res.json({
                                                 Success : false,
@@ -170,7 +206,8 @@ router.put('/api/v1/addvideo', function(req, res, next) {
 });
 
 router.put('/api/v1/updatesenderstatus', function(req, res, next) {
-        task.updateSenderStatus(req.query, function(err) {
+        console.log(req.body);
+        task.updateSenderStatus(req.body, function(err) {
                 if (err) {
                         res.json({
                                 Success : false,
@@ -185,22 +222,51 @@ router.put('/api/v1/updatesenderstatus', function(req, res, next) {
         });
 });
 
+router.put('/api/v1/updatereceiverstatus', function(req, res, next) {
+        console.log(req.body);
+        task.updateReceiverStatus(req.body, function(err) {
+                if (err) {
+                        res.json({
+                                Success : false,
+                                Message : err
+                        });
+                } else {
+                        res.json({
+                                Success : true,
+                                Message : "Update Success"
+                        });
+                }
+        });
+});
 router.post('/api/v1/upload', function(req, res, next) {
         task.uploadVideo(req, res, function(err) {
         });
-        });
+});
 
 router.get('/api/v1/download', function(req, res, next) {
         task.downloadVideo(req, res, function(err) {
         });
 });
 
+router.get('/api/v1/CountbySenderMail', function(req, res, next) {
+        console.log("CountBySnederMail");
+        console.log(req.query);
+        task.CountBySenderMail(req.query.requester, res, function(err, rows) {
+        });
+});
+
+router.get('/api/v1/CountbyReceiverMail', function(req, res, next) {
+        console.log("CountbyReceiverMAil");
+        console.log(req.query.provider);
+        task.CountByReceiverMail(req.query.provider, res, function(err, rows) {
+        });
+});
 /*
         affidavits Table
 */
 
 router.post('/api/v1/addcategory', function(req, res, next) {
-        task.addCategory(req.query, function(err) {
+        task.addCategory(req.body, function(err) {
                 if (err) {
                         res.json({
                                 Success : false,
@@ -220,7 +286,7 @@ router.get('/api/v1/getcategories', function(req, res, next) {
         });
 });
 
-router.get('/api/v1/getsortedcategories/:owner', function(req, res, next) {
+router.get('/api/v1/getsortedcategories', function(req, res, next) {
         task.getSortedCategories(req.query.owner, res, function(err) {
         });
 });

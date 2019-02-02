@@ -38,9 +38,11 @@ connection.connect(function (err, result) {
                         }
                         console.log("Database Created");
                         console.log("no error");
-                        var users = "CREATE TABLE users (id INT AUTO_INCREMENT KEY, userName VARCHAR(20), password VARCHAR(20), email VARCHAR(30), firstname VARCHAR(20), lastname VARCHAR(20), phonenumber VARCHAR(20), PIN VARCHAR(10))";
+                        var users = "CREATE TABLE users (id INT AUTO_INCREMENT KEY, userName VARCHAR(20), password VARCHAR(20), email VARCHAR(30), firstname VARCHAR(20), lastname VARCHAR(20), phonenumber VARCHAR(20), PIN VARCHAR(10), FCM_Token VARCHAR(256))";
                         var requests = "CREATE TABLE requests (id INT AUTO_INCREMENT KEY, Requester VARCHAR(20), affidavit_category VARCHAR(20), affidavit_description VARCHAR(200), sender_status VARCHAR(20), receiver_status VARCHAR(20), sender_mail_unread BOOLEAN, receiver_mail_unread BOOLEAN, provider_pNumber VARCHAR(20), video VARCHAR(100), updated_at VARCHAR(20))";
                         var affidavits = "CREATE TABLE affidavits (id INT AUTO_INCREMENT KEY, no INT, category VARCHAR(20), description VARCHAR(255), owner VARCHAR(20))";
+                        var admin = "CREATE TABLE admin (id INT AUTO_INCREMENT KEY, name VARCHAR(20), username VARCHAR(20), password VARCHAR(60), email VARCHAR(20), created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)";
+                        var createAdmin = "INSERT INTO admin (name, username, password, email) VALUES('Admin', 'admin', 'd033e22ae348aeb5660fc2140aec35850c4da997', 'admin@admin.com')";
                         tmpCon.connect(function(err) {
                                 tmpCon.query(users, function(err, result) {
                                         if (err){
@@ -55,6 +57,18 @@ connection.connect(function (err, result) {
                                         }
                                 });
                                 tmpCon.query(affidavits, function(err) {
+                                        if (err) {
+                                                console.log(err);
+                                                return;
+                                        }
+                                });
+                                tmpCon.query(admin, function(err) {
+                                        if (err) {
+                                                console.log(err);
+                                                return;
+                                        }
+                                });
+                                tmpCon.query(createAdmin, function(err) {
                                         if (err) {
                                                 console.log(err);
                                                 return;
@@ -83,3 +97,4 @@ app.listen(port);
 
 console.log('APP runs on : ' + port);
 module.exports = app;
+
